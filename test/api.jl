@@ -210,6 +210,14 @@ end
             Pkg.add(Pkg.PackageSpec(;path=p))
             @test_throws PkgError Pkg.free("TOML")
         end end
+        # Can free a registered package that is tracking a repo
+        with_temp_env() do
+            Pkg.add(Pkg.PackageSpec(name = "Example", rev="c37b675")) # same commit as release v0.5.1
+            @test Pkg.Types.Context().env.manifest[exuuid].repo.rev == "c37b675"
+            Pkg.free("Example") # should not throw, see issue #1142
+            @test Pkg.Types.Context().env.manifest[exuuid].repo.rev == nothing
+            @test Pkg.Types.Context().env.manifest[exuuid].version > v"0.5"
+        end
         # Can not free an unregistered package
         with_temp_env() do;
             Pkg.develop(Pkg.PackageSpec(;url="https://github.com/00vareladavid/Unregistered.jl"))
